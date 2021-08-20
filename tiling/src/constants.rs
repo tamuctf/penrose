@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use num::Float;
+use num_traits::Float;
 
 pub fn epsilon<T: Float>() -> T {
     T::from(0.0000000001).unwrap()
