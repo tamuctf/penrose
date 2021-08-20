@@ -43,6 +43,13 @@ fn ddist(shorts: BarNumber, longs: BarNumber, distance: f64) -> f64 {
 }
 
 impl MusicalSequence {
+    fn new() -> Self {
+        MusicalSequence {
+            upper_y: 1,
+            ..Default::default()
+        }
+    }
+
     pub(crate) fn new_with_coords(x: f64, y: f64, r: f64) -> Self {
         MusicalSequence {
             upper_y: 1,
