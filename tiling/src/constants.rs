@@ -1,4 +1,4 @@
-use num::Float;
+use num_traits::Float;
 
 pub fn epsilon<T: Float>() -> T {
     T::from(0.0000000001).unwrap()

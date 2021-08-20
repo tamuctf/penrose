@@ -4,7 +4,7 @@ use std::ops::Range;
 use itertools::*;
 
 use super::constants::*;
-use num::ToPrimitive;
+use num_traits::ToPrimitive;
 
 pub type BarNumber = i64;
 
