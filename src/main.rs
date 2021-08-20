@@ -8,8 +8,9 @@ use svg::node::element::Path;
 use svg::Document;
 use tiling::{compute_area, FiveFold, MatchList, Shape};
 
-fn draw<T: Shape>(shape: T, colour: &str, transform: &Transform2D<f64>) -> Path {
-    let mut iter = shape.path().into_iter();
+fn draw<T: Shape<N>, const N: usize>(shape: T, colour: &str, transform: &Transform2D<f64>) -> Path {
+    // array iteration by value doesn't resolve properly until Edition 2021 rolls around
+    let mut iter = <[_; N]>::into_iter(shape.path());
     let mut data = Data::new().move_to(transform.transform_point(iter.next().unwrap()).to_tuple());
     for point in iter {
         data = data.line_to(transform.transform_point(point).to_tuple());
