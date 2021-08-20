@@ -1,0 +1,18 @@
+[package]
+name = "penrose-renderer"
+authors = ["Addison Crump <addisoncrump@tamu.edu>"]
+license = "GPL-3.0-or-later"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+euclid = "0.22"
+svg = "0.10"
+tiling = { path = "tiling", package = "penrose-tiling" }
+
+[workspace]
+members = [
+    "tiling"
+]
