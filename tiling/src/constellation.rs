@@ -1,10 +1,28 @@
+/*
+ * Penrose: Penrose tiling generation, adjacency, and other miscellaneous APIs.
+ * Copyright (C) 2021  TAMUctf
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::f64::consts::TAU;
 use std::iter::once;
 
 use arrayvec::ArrayVec;
-use euclid::Angle;
 use euclid::default::{Point2D, Transform2D, Vector2D};
+use euclid::Angle;
 use itertools::Itertools;
 
 use crate::fivefold::bar_num;
@@ -25,7 +43,7 @@ impl Consume for PointGraph {
             match self.get_mut(&primary) {
                 None => {
                     self.insert(primary.clone(), secondaries);
-                },
+                }
                 Some(existing) => {
                     existing.append(&mut secondaries);
                 }
@@ -34,10 +52,7 @@ impl Consume for PointGraph {
     }
 }
 
-fn pair_scan(
-    points: &BTreeSet<IntersectionPoint>,
-    delta: f64,
-) -> PointGraph {
+fn pair_scan(points: &BTreeSet<IntersectionPoint>, delta: f64) -> PointGraph {
     let mut pairs = BTreeMap::new();
 
     for (primary, secondary) in points.iter().tuple_combinations() {
@@ -156,8 +171,8 @@ pub trait Constellation {
         plane: &FiveFold,
         pair: [&IntersectionPoint; 2],
     ) -> Option<Self>
-        where
-            Self: Sized;
+    where
+        Self: Sized;
 
     fn mapping(&self) -> Transform2D<f64>;
 
@@ -168,8 +183,8 @@ pub trait Constellation {
         plane: &FiveFold,
         boundaries: Option<&[IntersectionPoint]>,
     ) -> Vec<Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let pairs = if let Some(boundaries) = boundaries.filter(|boundaries| boundaries.len() >= 2)
         {
@@ -186,14 +201,11 @@ pub trait Constellation {
 
                 // println!("{}", pairs.len());
                 // println!("{}", pairs.values().map(|item| item.len()).sum::<usize>());
-            };
+            }
 
             let last = boundaries.last().unwrap();
-            let slice: BTreeSet<IntersectionPoint> = points
-                .iter()
-                .skip_while(|&p| p < last)
-                .cloned()
-                .collect();
+            let slice: BTreeSet<IntersectionPoint> =
+                points.iter().skip_while(|&p| p < last).cloned().collect();
             // println!("{} => {}", points.len(), slice.len());
             pairs.consume(pair_scan(&slice, Self::delta()));
 

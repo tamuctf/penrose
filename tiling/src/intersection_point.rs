@@ -1,3 +1,21 @@
+/*
+ * Penrose: Penrose tiling generation, adjacency, and other miscellaneous APIs.
+ * Copyright (C) 2021  TAMUctf
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 use std::cmp::{max_by, Ordering};
 use std::collections::BTreeSet;
 
@@ -6,8 +24,8 @@ use euclid::default::Point2D;
 use super::constants::*;
 use super::musical_sequence::BarNumber;
 use super::musical_sequence::MusicalSequence;
-use std::fmt::{Display, Formatter};
 use std::f64::consts::TAU;
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Default, Clone)]
 pub struct IntersectionPoint {
@@ -151,18 +169,28 @@ impl PartialEq<Self> for IntersectionPoint {
 
 impl PartialOrd<Self> for IntersectionPoint {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.box_layer.partial_cmp(&other.box_layer).unwrap()
-            .then(self.box_theta.partial_cmp(&other.box_theta).unwrap())
-            .then(self.seq1
+        Some(
+            self.box_layer
+                .partial_cmp(&other.box_layer)
                 .unwrap()
-                .rotation()
-                .partial_cmp(&other.seq1.unwrap().rotation()).unwrap())
-            .then(self.seq2
-                .unwrap()
-                .rotation()
-                .partial_cmp(&other.seq2.unwrap().rotation()).unwrap())
-            .then(self.bar1.cmp(&other.bar1))
-            .then(self.bar2.cmp(&other.bar2)))
+                .then(self.box_theta.partial_cmp(&other.box_theta).unwrap())
+                .then(
+                    self.seq1
+                        .unwrap()
+                        .rotation()
+                        .partial_cmp(&other.seq1.unwrap().rotation())
+                        .unwrap(),
+                )
+                .then(
+                    self.seq2
+                        .unwrap()
+                        .rotation()
+                        .partial_cmp(&other.seq2.unwrap().rotation())
+                        .unwrap(),
+                )
+                .then(self.bar1.cmp(&other.bar1))
+                .then(self.bar2.cmp(&other.bar2)),
+        )
     }
 }
 

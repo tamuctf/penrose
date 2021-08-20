@@ -2,7 +2,7 @@
 name = "penrose-tiling"
 authors = ["Addison Crump <addisoncrump@tamu.edu>"]
 description = "A Penrose tiling generator based on Jason Healy's Penrose Empires"
-license = "GPL-3.0-or-later AND Artistic-1.0"
+license = "GPL-3.0-or-later"
 version = "0.1.0"
 edition = "2018"
 
