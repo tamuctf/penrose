@@ -129,7 +129,7 @@ impl Constellation for Dart {
     }
 }
 
-impl Shape for Dart {
+impl Shape<4> for Dart {
     fn contains(&self, point: Point2D<f64>) -> bool {
         let inverse = self.mapping.inverse().unwrap();
         let point = inverse.transform_point(point);
@@ -146,8 +146,8 @@ impl Shape for Dart {
         }
     }
 
-    fn path(&self) -> Vec<Point2D<f64>> {
-        vec![
+    fn path(&self) -> [Point2D<f64>; 4] {
+        [
             self.mapping.transform_point(TRIANGLES[0].a),
             self.mapping.transform_point(TRIANGLES[0].c),
             self.mapping.transform_point(TRIANGLES[0].b),

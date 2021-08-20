@@ -1,8 +1,8 @@
 use euclid::default::Point2D;
 
-pub trait Shape {
+pub trait Shape<const N: usize> {
     fn contains(&self, point: Point2D<f64>) -> bool;
-    fn path(&self) -> Vec<Point2D<f64>>;
+    fn path(&self) -> [Point2D<f64>; N];
 }
 
 pub(crate) struct Triangle {
@@ -11,7 +11,7 @@ pub(crate) struct Triangle {
     pub(crate) c: Point2D<f64>,
 }
 
-impl Shape for Triangle {
+impl Shape<3> for Triangle {
     // http://jsfiddle.net/PerroAZUL/zdaY8/1/ praise be
     fn contains(&self, point: Point2D<f64>) -> bool {
         let area = (-self.b.y * self.c.x
@@ -33,8 +33,8 @@ impl Shape for Triangle {
         s.is_sign_positive() && t.is_sign_positive() && (s + t) < 2f64 * area * sign
     }
 
-    fn path(&self) -> Vec<Point2D<f64>> {
-        vec![self.a, self.b, self.c]
+    fn path(&self) -> [Point2D<f64>; 3] {
+        [self.a, self.b, self.c]
     }
 }
 
