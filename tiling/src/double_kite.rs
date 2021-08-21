@@ -94,8 +94,8 @@ impl Constellation for DoubleKite {
     fn force_bars(&self, plane: &mut FiveFold) -> bool {
         let new = map_optional(&*FORCE, &self.mapping, plane, 1).unwrap();
 
-        if new.seq2.is_none() {
-            return plane.force_point(new.borrow().into(), new.seq1.as_ref().unwrap());
+        if new.seq2().is_none() {
+            return plane.force_point(new.borrow().into(), new.seq1().as_ref().unwrap());
         }
         false
     }

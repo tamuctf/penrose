@@ -61,9 +61,9 @@ pub fn compute_area(plane: &mut FiveFold, bounds: &Box2D<f64>) -> MatchList {
         let mut theta = -1f64;
 
         for point in points.iter() {
-            if point.box_layer != layer || point.box_theta != theta {
-                layer = point.box_layer;
-                theta = point.box_theta;
+            if point.box_layer() != layer || point.box_theta() != theta {
+                layer = point.box_layer();
+                theta = point.box_theta();
 
                 boundaries.push(point.clone());
             }

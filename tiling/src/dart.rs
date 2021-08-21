@@ -131,15 +131,15 @@ impl Constellation for Dart {
     }
 
     fn force_bars(&self, plane: &mut FiveFold) -> bool {
-        if self.left.as_ref().unwrap().seq2.is_none() {
+        if self.left.as_ref().unwrap().seq2().is_none() {
             plane.force_point(
                 self.left.as_ref().unwrap().into(),
-                self.left.as_ref().unwrap().seq1.as_ref().unwrap(),
+                self.left.as_ref().unwrap().seq1().as_ref().unwrap(),
             )
-        } else if self.right.as_ref().unwrap().seq2.is_none() {
+        } else if self.right.as_ref().unwrap().seq2().is_none() {
             plane.force_point(
                 self.right.as_ref().unwrap().into(),
-                self.right.as_ref().unwrap().seq1.as_ref().unwrap(),
+                self.right.as_ref().unwrap().seq1().as_ref().unwrap(),
             )
         } else {
             false

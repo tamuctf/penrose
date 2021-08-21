@@ -356,8 +356,8 @@ mod test {
                     "Intersection point between {}, {} at ({}, {})",
                     a.rotation(),
                     b.rotation(),
-                    point.x,
-                    point.y
+                    point.x(),
+                    point.y()
                 )
             });
 

@@ -82,19 +82,19 @@ fn pair_scan(points: &BTreeSet<IntersectionPoint>, delta: f64) -> PointGraph {
 }
 
 fn transform(real: &[IntersectionPoint; 2], test: [&IntersectionPoint; 2]) -> Transform2D<f64> {
-    let real_theta = (real[1].y - real[0].y)
-        .atan2(real[1].x - real[0].x)
+    let real_theta = (real[1].y() - real[0].y())
+        .atan2(real[1].x() - real[0].x())
         .rem_euclid(TAU);
-    let test_theta = (test[1].y - test[0].y)
-        .atan2(test[1].x - test[0].x)
+    let test_theta = (test[1].y() - test[0].y())
+        .atan2(test[1].x() - test[0].x())
         .rem_euclid(TAU);
 
     let theta = test_theta - real_theta;
 
     Transform2D::identity()
-        .pre_translate(Vector2D::new(test[0].x, test[0].y))
+        .pre_translate(Vector2D::new(test[0].x(), test[0].y()))
         .pre_rotate(Angle::radians(theta))
-        .pre_translate(Vector2D::new(-real[0].x, -real[0].y))
+        .pre_translate(Vector2D::new(-real[0].x(), -real[0].y()))
 }
 
 pub(crate) fn test_required(
@@ -112,8 +112,8 @@ pub(crate) fn test_required(
             if !points.contains(&mapped) {
                 return None;
             }
-            let real_diff = unmapped.seq2.unwrap().rotation() - unmapped.seq1.unwrap().rotation();
-            let test_diff = mapped.seq2.unwrap().rotation() - mapped.seq1.unwrap().rotation();
+            let real_diff = unmapped.seq2().unwrap().rotation() - unmapped.seq1().unwrap().rotation();
+            let test_diff = mapped.seq2().unwrap().rotation() - mapped.seq1().unwrap().rotation();
 
             if real_diff != test_diff && real_diff + test_diff != TAU {
                 return None;
@@ -155,7 +155,7 @@ pub(crate) fn map_optional(
         ))
     } else if let Some((index, _)) = sequences.first() {
         let mut temp = IntersectionPoint::incomplete(mapped);
-        temp.seq1 = Some(plane.sequences()[(index + amount) % 5].clone());
+        temp.data.seq1 = Some(plane.sequences()[(index + amount) % 5].clone());
         Some(temp)
     } else {
         None
