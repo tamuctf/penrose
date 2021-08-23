@@ -109,7 +109,7 @@ impl Constellation for Dart {
     }
 
     fn test_pair(
-        points: &BTreeSet<IntersectionPoint>,
+        points: &BTreeSet<&IntersectionPoint>,
         plane: &FiveFold,
         pair: [&IntersectionPoint; 2],
     ) -> Option<Self>

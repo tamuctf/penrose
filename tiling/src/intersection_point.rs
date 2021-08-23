@@ -185,12 +185,12 @@ impl IntersectionPoint {
         res
     }
 
-    pub(crate) fn add_to(&self, store: &mut BTreeSet<Self>) -> bool {
+    pub(crate) fn add_to<'a>(&'a self, store: &mut BTreeSet<&'a Self>) -> bool {
         std::iter::once(self)
             .chain(self.dup_right.as_deref())
             .chain(self.dup_bottom.as_deref())
             .chain(self.dup_diagonal.as_deref())
-            .all(|point| store.insert(point.clone()))
+            .all(|point| store.insert(point))
     }
 }
 
@@ -260,6 +260,7 @@ mod test {
     use crate::musical_sequence::BarBound;
 
     use super::*;
+    use rustc_hash::FxHashMap;
 
     #[test]
     #[ignore]
@@ -272,9 +273,19 @@ mod test {
         primary.force(10, BarBound::Longer);
         secondary.force(10, BarBound::Shorter);
 
+        let mut cache = FxHashMap::default();
+
         for i in (0..100).step_by(10) {
             for j in (0..100).step_by(10) {
-                let point = IntersectionPoint::new(&primary, i, &secondary, j, i as f64, j as f64);
+                cache.insert(
+                    (i, j),
+                    IntersectionPoint::new(&primary, i, &secondary, j, i as f64, j as f64),
+                );
+            }
+        }
+        for i in (0..100).step_by(10) {
+            for j in (0..100).step_by(10) {
+                let point = cache.get(&(i, j)).unwrap();
 
                 (!point.add_to(&mut points)).then(|| panic!("couldn't add all points"));
             }

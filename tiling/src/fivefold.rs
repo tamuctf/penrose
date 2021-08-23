@@ -18,8 +18,23 @@ const N: usize = 5;
 
 #[derive(Debug, Clone)]
 pub struct FiveFold {
-    cache: FxHashMap<([u8; 8], BarNumber, [u8; 8], BarNumber), IntersectionPoint>,
+    cache: FxHashMap<(u64, BarNumber, u64, BarNumber), IntersectionPoint>,
     sequences: ArrayVec<MusicalSequence, N>,
+    last_forced: Option<f64>,
+}
+
+/// expect some bars :)
+fn expected_intersections(bounds: &Box2D<f64>) -> usize {
+    let avg_bar = (1. * short::<f64>() + golden_ratio::<f64>() * long::<f64>())
+        / (1. + golden_ratio::<f64>());
+    let range = f64::max(bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y);
+
+    let bars = range / avg_bar;
+
+    // some witchcraft:
+    // - 10 for handshakes -- number of intersections that 5 non-parallel bars on their own have
+    // - bars^2 because for each group of bars there are bars^2 intersections
+    10 * (bars * bars) as usize
 }
 
 fn intersection(p1: Point2D<f64>, rot1: f64, p2: Point2D<f64>, rot2: f64) -> Option<Point2D<f64>> {
@@ -146,6 +161,7 @@ impl FiveFold {
             sequences: (0..N)
                 .map(|i| MusicalSequence::new_with_coords(0f64, 0f64, (i as f64 * TAU) / N as f64))
                 .collect(),
+            last_forced: None,
         }
     }
 
@@ -278,34 +294,57 @@ impl FiveFold {
         })
     }
 
-    pub(crate) fn intersection_points(
-        &mut self,
-        bounds: &Box2D<f64>,
-    ) -> BTreeSet<IntersectionPoint> {
-        let mut intermediate = BTreeSet::new();
-
-        for (a, a_bar, b, b_bar) in self
-            .sequences
-            .iter()
-            .map(|ms| (ms, forced_bars(&bounds, ms)))
-            .tuple_combinations()
-            .flat_map(|((a, a_bars), (b, b_bars))| {
-                a_bars
-                    .into_iter()
-                    .cartesian_product(b_bars)
-                    .map(move |(a_bar, b_bar)| (a, a_bar, b, b_bar))
-            })
-        {
-            let key = (
-                a.rotation().to_ne_bytes(),
-                a_bar,
-                b.rotation().to_ne_bytes(),
-                b_bar,
-            );
-            self.cache
-                .entry(key)
-                .or_insert_with(|| intersection_point(a, a_bar, b, b_bar));
+    pub(crate) fn update_intersection_points(&mut self, bounds: &Box2D<f64>) {
+        let expected = expected_intersections(bounds);
+        if self.cache.capacity() < expected {
+            self.cache.reserve(expected - self.cache.capacity())
         }
+
+        if let Some(forced) = self.last_forced.take() {
+            for (a, a_bar, b, b_bar) in self
+                .sequences
+                .iter()
+                .map(|ms| (ms, forced_bars(&bounds, ms)))
+                .tuple_combinations()
+                .filter(|((a, _), (b, _))| a.rotation() == forced || b.rotation() == forced)
+                .flat_map(|((a, a_bars), (b, b_bars))| {
+                    a_bars
+                        .into_iter()
+                        .cartesian_product(b_bars)
+                        .map(move |(a_bar, b_bar)| (a, a_bar, b, b_bar))
+                })
+            {
+                let key = (a.rotation().to_bits(), a_bar, b.rotation().to_bits(), b_bar);
+                self.cache
+                    .entry(key)
+                    .or_insert_with(|| intersection_point(a, a_bar, b, b_bar));
+            }
+        } else {
+            for (a, a_bar, b, b_bar) in self
+                .sequences
+                .iter()
+                .map(|ms| (ms, forced_bars(&bounds, ms)))
+                .tuple_combinations()
+                .flat_map(|((a, a_bars), (b, b_bars))| {
+                    a_bars
+                        .into_iter()
+                        .cartesian_product(b_bars)
+                        .map(move |(a_bar, b_bar)| (a, a_bar, b, b_bar))
+                })
+            {
+                let key = (a.rotation().to_bits(), a_bar, b.rotation().to_bits(), b_bar);
+                self.cache
+                    .entry(key)
+                    .or_insert_with(|| intersection_point(a, a_bar, b, b_bar));
+            }
+        }
+    }
+
+    pub(crate) fn intersection_points(
+        &self,
+        bounds: &Box2D<f64>,
+    ) -> BTreeSet<&'_ IntersectionPoint> {
+        let mut intermediate = BTreeSet::new();
 
         self.cache
             .values()
@@ -324,6 +363,7 @@ impl FiveFold {
     }
 
     pub(crate) fn force_point(&mut self, p: Point2D<f64>, ms: &MusicalSequence) -> bool {
+        assert!(self.last_forced.is_none(), "Naughty!");
         let along = nearest_point(p, ms);
         let distance = distance_along(along, ms);
 
@@ -332,7 +372,12 @@ impl FiveFold {
             .iter_mut()
             .find(|sequence| ms.rotation() == sequence.rotation())
             .unwrap();
-        ms.force_at_distance(distance)
+        if ms.force_at_distance(distance) {
+            self.last_forced.replace(ms.rotation());
+            true
+        } else {
+            false
+        }
     }
 }
 
