@@ -160,21 +160,18 @@ impl IntersectionPoint {
 
         if x_overflow > box_dim::<f64>() && y_overflow > box_dim::<f64>() {
             let (layer, theta) = box_info(x_floor + 1f64, y_floor + 1f64);
-            if let Some(dup) = res.dup_diagonal.as_deref_mut() {
-                *dup = Self::new_derived(res.data, layer, theta);
-            }
+            res.dup_diagonal
+                .replace(Box::new(Self::new_derived(res.data, layer, theta)));
         }
         if x_overflow > box_dim::<f64>() {
             let (layer, theta) = box_info(x_floor + 1f64, y_floor);
-            if let Some(dup) = res.dup_right.as_deref_mut() {
-                *dup = Self::new_derived(res.data, layer, theta);
-            }
+            res.dup_right
+                .replace(Box::new(Self::new_derived(res.data, layer, theta)));
         }
         if y_overflow > box_dim::<f64>() {
             let (layer, theta) = box_info(x_floor, y_floor + 1f64);
-            if let Some(dup) = res.dup_bottom.as_deref_mut() {
-                *dup = Self::new_derived(res.data, layer, theta);
-            }
+            res.dup_bottom
+                .replace(Box::new(Self::new_derived(res.data, layer, theta)));
         }
 
         let (layer, theta) = box_info(x_floor, y_floor);
