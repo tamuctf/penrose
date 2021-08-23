@@ -67,8 +67,8 @@ fn render(matches: MatchList, bounds: &Box2D<f64>, scale: f64) -> Document {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let configuration = std::env::args().skip(1).next().unwrap_or("king".to_owned());
-    let mut plane = match configuration.as_str() {
+    let configuration = std::env::args().nth(1).unwrap_or_else(|| "king".to_owned());
+    let plane = match configuration.as_str() {
         "ace" => FiveFold::ace_configuration(),
         "deuce" => FiveFold::deuce_configuration(),
         "sun" => FiveFold::sun_configuration(),

@@ -97,7 +97,7 @@ impl Constellation for Kite {
     ) -> Option<Self> {
         let mapping = test_required(points, plane, pair, Self::key_pair(), Self::pattern());
 
-        mapping.map(|mapping| Kite::new(mapping))
+        mapping.map(Kite::new)
     }
 
     fn mapping(&self) -> Transform2D<f64> {

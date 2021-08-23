@@ -56,7 +56,7 @@ fn expected_intersections(bounds: &Box2D<f64>) -> usize {
 }
 
 fn intersection(p1: Point2D<f64>, rot1: f64, p2: Point2D<f64>, rot2: f64) -> Option<Point2D<f64>> {
-    if rot1 == rot2 {
+    if (rot1 - rot2).abs() < epsilon::<f64>() {
         return None;
     }
 
@@ -173,18 +173,8 @@ pub(crate) fn intersection_point(
 }
 
 impl FiveFold {
-    pub fn new() -> Self {
-        Self {
-            cache: FxHashMap::default(),
-            sequences: (0..N)
-                .map(|i| MusicalSequence::new_with_coords(0f64, 0f64, (i as f64 * TAU) / N as f64))
-                .collect(),
-            last_forced: None,
-        }
-    }
-
     pub fn ace_configuration() -> FiveFold {
-        let mut plane = FiveFold::new();
+        let mut plane = FiveFold::default();
         let seqs = plane.sequences_mut();
 
         seqs[0].set_zeroeth(minnick_a::<f64>());
@@ -197,7 +187,7 @@ impl FiveFold {
     }
 
     pub fn deuce_configuration() -> FiveFold {
-        let mut plane = FiveFold::new();
+        let mut plane = FiveFold::default();
         let seqs = plane.sequences_mut();
 
         seqs[0].set_zeroeth(minnick_a::<f64>());
@@ -210,7 +200,7 @@ impl FiveFold {
     }
 
     pub fn sun_configuration() -> FiveFold {
-        let mut plane = FiveFold::new();
+        let mut plane = FiveFold::default();
 
         for ms in plane.sequences_mut() {
             ms.set_zeroeth(minnick_b::<f64>());
@@ -220,7 +210,7 @@ impl FiveFold {
     }
 
     pub fn star_configuration() -> FiveFold {
-        let mut plane = FiveFold::new();
+        let mut plane = FiveFold::default();
 
         for ms in plane.sequences_mut() {
             ms.set_zeroeth(-(minnick_x::<f64>() + minnick_y::<f64>() + minnick_z::<f64>()));
@@ -231,7 +221,7 @@ impl FiveFold {
     }
 
     pub fn jack_configuration() -> FiveFold {
-        let mut plane = FiveFold::new();
+        let mut plane = FiveFold::default();
         let seqs = plane.sequences_mut();
 
         seqs[0].set_zeroeth(minnick_e::<f64>());
@@ -247,7 +237,7 @@ impl FiveFold {
     }
 
     pub fn queen_configuration() -> FiveFold {
-        let mut plane = FiveFold::new();
+        let mut plane = FiveFold::default();
         let seqs = plane.sequences_mut();
 
         seqs[0].set_zeroeth(minnick_a::<f64>());
@@ -264,7 +254,7 @@ impl FiveFold {
     }
 
     pub fn king_configuration() -> FiveFold {
-        let mut plane = FiveFold::new();
+        let mut plane = FiveFold::default();
         let seqs = plane.sequences_mut();
 
         seqs[0].set_zeroeth(-minnick_w::<f64>());
@@ -322,9 +312,12 @@ impl FiveFold {
             for (a, a_bar, b, b_bar) in self
                 .sequences
                 .iter()
-                .map(|ms| (ms, forced_bars(&bounds, ms)))
+                .map(|ms| (ms, forced_bars(bounds, ms)))
                 .tuple_combinations()
-                .filter(|((a, _), (b, _))| a.rotation() == forced || b.rotation() == forced)
+                .filter(|((a, _), (b, _))| {
+                    (a.rotation() - forced).abs() < epsilon::<f64>()
+                        || (b.rotation() - forced).abs() < epsilon::<f64>()
+                })
                 .flat_map(|((a, a_bars), (b, b_bars))| {
                     a_bars
                         .into_iter()
@@ -341,7 +334,7 @@ impl FiveFold {
             for (a, a_bar, b, b_bar) in self
                 .sequences
                 .iter()
-                .map(|ms| (ms, forced_bars(&bounds, ms)))
+                .map(|ms| (ms, forced_bars(bounds, ms)))
                 .tuple_combinations()
                 .flat_map(|((a, a_bars), (b, b_bars))| {
                     a_bars
@@ -388,13 +381,25 @@ impl FiveFold {
         let ms = self
             .sequences
             .iter_mut()
-            .find(|sequence| ms.rotation() == sequence.rotation())
+            .find(|sequence| (ms.rotation() - sequence.rotation()).abs() < epsilon::<f64>())
             .unwrap();
         if ms.force_at_distance(distance) {
             self.last_forced.replace(ms.rotation());
             true
         } else {
             false
+        }
+    }
+}
+
+impl Default for FiveFold {
+    fn default() -> Self {
+        Self {
+            cache: FxHashMap::default(),
+            sequences: (0..N)
+                .map(|i| MusicalSequence::new_with_coords(0f64, 0f64, (i as f64 * TAU) / N as f64))
+                .collect(),
+            last_forced: None,
         }
     }
 }
@@ -407,7 +412,7 @@ mod test {
 
     #[test]
     fn basic() {
-        let mut fold = FiveFold::new();
+        let mut fold = FiveFold::default();
 
         fold.sequences
             .iter_mut()
