@@ -201,35 +201,49 @@ impl From<&IntersectionPoint> for Point2D<f64> {
 
 impl Eq for IntersectionPoint {}
 
-impl PartialEq<Self> for IntersectionPoint {
+impl PartialEq for IntersectionPoint {
     fn eq(&self, other: &Self) -> bool {
         self.partial_cmp(other).unwrap().is_eq()
     }
 }
 
-impl PartialOrd<Self> for IntersectionPoint {
+trait OrderingExt {
+    fn and_then(self, f: impl Fn() -> Ordering) -> Ordering;
+}
+
+impl OrderingExt for Ordering {
+    fn and_then(self, f: impl Fn() -> Ordering) -> Ordering {
+        if self != Ordering::Equal {
+            self
+        } else {
+            f()
+        }
+    }
+}
+
+impl PartialOrd for IntersectionPoint {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(
             self.box_layer()
                 .partial_cmp(&other.box_layer())
                 .unwrap()
-                .then(self.box_theta().partial_cmp(&other.box_theta()).unwrap())
-                .then(
+                .and_then(|| self.box_theta().partial_cmp(&other.box_theta()).unwrap())
+                .and_then(|| {
                     self.seq1()
                         .unwrap()
                         .rotation()
                         .partial_cmp(&other.seq1().unwrap().rotation())
-                        .unwrap(),
-                )
-                .then(
+                        .unwrap()
+                })
+                .and_then(|| {
                     self.seq2()
                         .unwrap()
                         .rotation()
                         .partial_cmp(&other.seq2().unwrap().rotation())
-                        .unwrap(),
-                )
-                .then(self.bar1().cmp(&other.bar1()))
-                .then(self.bar2().cmp(&other.bar2())),
+                        .unwrap()
+                })
+                .and_then(|| self.bar1().cmp(&other.bar1()))
+                .and_then(|| self.bar2().cmp(&other.bar2())),
         )
     }
 }
