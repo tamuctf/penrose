@@ -24,7 +24,7 @@ use euclid::default::Transform2D;
 use svg::node::element::path::Data;
 use svg::node::element::Path;
 use svg::Document;
-use tiling::{compute_area, FiveFold, MatchList, Shape};
+use tiling::{FiveFold, MatchList, Shape, Tiling};
 
 fn draw<T: Shape<N>, const N: usize>(shape: T, colour: &str, transform: &Transform2D<f64>) -> Path {
     // array iteration by value doesn't resolve properly until Edition 2021 rolls around
@@ -79,7 +79,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         _ => panic!("Invalid configuration selection"),
     };
     let bounds = Box2D::new(Point2D::new(-40., -20.), Point2D::new(40., 20.));
-    let matches = compute_area(&mut plane, &bounds);
+    let mut tiling = Tiling::new(plane, bounds);
+    let matches = tiling.compute_area();
 
     svg::save(
         format!("{}.svg", configuration),

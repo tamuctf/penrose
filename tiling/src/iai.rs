@@ -19,60 +19,59 @@
 use euclid::default::Point2D;
 
 use euclid::default::Box2D;
-use iai::black_box;
-use penrose_tiling::{compute_area, FiveFold, MatchList};
+use penrose_tiling::{FiveFold, Tiling};
 
-fn render(bounds: &Box2D<f64>, mut plane: FiveFold) -> MatchList {
-    compute_area(&mut plane, bounds)
+fn render(mut tiling: Tiling) {
+    tiling.compute_area();
 }
 
 fn ace() {
     let plane = FiveFold::ace_configuration();
     let bounds = Box2D::new(Point2D::new(-8., -4.), Point2D::new(8., 4.));
 
-    render(&bounds, black_box(plane));
+    render(Tiling::new(plane, bounds))
 }
 
 fn deuce() {
     let plane = FiveFold::deuce_configuration();
     let bounds = Box2D::new(Point2D::new(-40., -20.), Point2D::new(40., 20.));
 
-    render(&bounds, black_box(plane));
+    render(Tiling::new(plane, bounds))
 }
 
 fn sun() {
     let plane = FiveFold::sun_configuration();
     let bounds = Box2D::new(Point2D::new(-14., -7.), Point2D::new(14., 7.));
 
-    render(&bounds, black_box(plane));
+    render(Tiling::new(plane, bounds))
 }
 
 fn star() {
     let plane = FiveFold::star_configuration();
     let bounds = Box2D::new(Point2D::new(-40., -20.), Point2D::new(40., 20.));
 
-    render(&bounds, black_box(plane));
+    render(Tiling::new(plane, bounds))
 }
 
 fn jack() {
     let plane = FiveFold::jack_configuration();
     let bounds = Box2D::new(Point2D::new(-40., -20.), Point2D::new(40., 20.));
 
-    render(&bounds, black_box(plane));
+    render(Tiling::new(plane, bounds))
 }
 
 fn queen() {
     let plane = FiveFold::queen_configuration();
     let bounds = Box2D::new(Point2D::new(-40., -20.), Point2D::new(40., 20.));
 
-    render(&bounds, black_box(plane));
+    render(Tiling::new(plane, bounds))
 }
 
 fn king() {
     let plane = FiveFold::king_configuration();
     let bounds = Box2D::new(Point2D::new(-40., -20.), Point2D::new(40., 20.));
 
-    render(&bounds, black_box(plane));
+    render(Tiling::new(plane, bounds))
 }
 
 iai::main!(ace, deuce, sun, star, jack, queen, king);

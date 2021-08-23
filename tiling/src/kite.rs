@@ -40,7 +40,7 @@ lazy_static! {
         ]
     };
     static ref KEY_PAIR: [IntersectionPoint; 2] = [PATTERN[0].clone(), PATTERN[1].clone()];
-    static ref DELTA: f64 = Point2D::from(&KEY_PAIR[0]).distance_to((&KEY_PAIR[1]).into());
+    static ref DELTA: f64 = KEY_PAIR[0].point().distance_to(KEY_PAIR[1].point());
     static ref TRIANGLES: [Triangle; 2] = {
         let corner_x = (PI / 5f64).cos() * (minnick_x::<f64>() + minnick_y::<f64>());
         let corner_y = (PI / 5f64).sin() * (minnick_x::<f64>() + minnick_y::<f64>());

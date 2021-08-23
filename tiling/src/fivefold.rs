@@ -1,21 +1,3 @@
-/*
- * Penrose: Penrose tiling generation, adjacency, and other miscellaneous APIs.
- * Copyright (C) 2021  TAMUctf
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::BTreeSet;
 use std::f64::consts::{PI, TAU};
@@ -30,11 +12,13 @@ use super::constants::*;
 use super::intersection_point::IntersectionPoint;
 use super::musical_sequence::BarNumber;
 use super::musical_sequence::MusicalSequence;
+use rustc_hash::FxHashMap;
 
 const N: usize = 5;
 
 #[derive(Debug, Clone)]
 pub struct FiveFold {
+    cache: FxHashMap<([u8; 8], BarNumber, [u8; 8], BarNumber), IntersectionPoint>,
     sequences: ArrayVec<MusicalSequence, N>,
 }
 
@@ -158,6 +142,7 @@ pub(crate) fn intersection_point(
 impl FiveFold {
     pub fn new() -> Self {
         Self {
+            cache: FxHashMap::default(),
             sequences: (0..N)
                 .map(|i| MusicalSequence::new_with_coords(0f64, 0f64, (i as f64 * TAU) / N as f64))
                 .collect(),
@@ -293,10 +278,14 @@ impl FiveFold {
         })
     }
 
-    pub(crate) fn intersection_points(&self, bounds: &Box2D<f64>) -> BTreeSet<IntersectionPoint> {
+    pub(crate) fn intersection_points(
+        &mut self,
+        bounds: &Box2D<f64>,
+    ) -> BTreeSet<IntersectionPoint> {
         let mut intermediate = BTreeSet::new();
 
-        self.sequences
+        for (a, a_bar, b, b_bar) in self
+            .sequences
             .iter()
             .map(|ms| (ms, forced_bars(&bounds, ms)))
             .tuple_combinations()
@@ -304,9 +293,23 @@ impl FiveFold {
                 a_bars
                     .into_iter()
                     .cartesian_product(b_bars)
-                    .map(move |(a_bar, b_bar)| intersection_point(a, a_bar, b, b_bar))
+                    .map(move |(a_bar, b_bar)| (a, a_bar, b, b_bar))
             })
-            .filter(|point| bounds.contains(point.into()))
+        {
+            let key = (
+                a.rotation().to_ne_bytes(),
+                a_bar,
+                b.rotation().to_ne_bytes(),
+                b_bar,
+            );
+            self.cache
+                .entry(key)
+                .or_insert_with(|| intersection_point(a, a_bar, b, b_bar));
+        }
+
+        self.cache
+            .values()
+            .filter(|point| bounds.contains(point.point()))
             .all(|point| point.add_to(&mut intermediate));
 
         intermediate
@@ -357,7 +360,7 @@ mod test {
                     a.rotation(),
                     b.rotation(),
                     point.x(),
-                    point.y()
+                    point.y(),
                 )
             });
 
@@ -371,6 +374,6 @@ mod test {
         expected_intersections
             .into_iter()
             .zip(actual_intersections.iter())
-            .for_each(|(expected, actual)| assert_eq!(expected, actual.into()));
+            .for_each(|(expected, actual)| assert_eq!(expected, actual.point()));
     }
 }

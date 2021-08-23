@@ -57,6 +57,10 @@ fn box_info(x_boxes: f64, y_boxes: f64) -> (f64, f64) {
 
 impl IntersectionPoint {
     #[inline(always)]
+    pub fn point(&self) -> Point2D<f64> {
+        self.data.point
+    }
+    #[inline(always)]
     pub fn x(&self) -> f64 {
         self.data.point.x
     }
@@ -187,12 +191,6 @@ impl IntersectionPoint {
             .chain(self.dup_bottom.as_deref())
             .chain(self.dup_diagonal.as_deref())
             .all(|point| store.insert(point.clone()))
-    }
-}
-
-impl From<&IntersectionPoint> for Point2D<f64> {
-    fn from(point: &IntersectionPoint) -> Self {
-        point.data.point
     }
 }
 

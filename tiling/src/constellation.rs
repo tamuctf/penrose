@@ -42,7 +42,7 @@ impl Consume for PointGraph {
         for (primary, mut secondaries) in other.into_iter() {
             match self.get_mut(&primary) {
                 None => {
-                    self.insert(primary.clone(), secondaries);
+                    self.insert(primary, secondaries);
                 }
                 Some(existing) => {
                     existing.append(&mut secondaries);
@@ -56,9 +56,7 @@ fn pair_scan(points: &BTreeSet<IntersectionPoint>, delta: f64) -> PointGraph {
     let mut pairs = BTreeMap::new();
 
     for (primary, secondary) in points.iter().tuple_combinations() {
-        if (Point2D::from(primary).distance_to(Point2D::from(secondary)) - delta).abs()
-            < epsilon::<f64>()
-        {
+        if (primary.point().distance_to(secondary.point()) - delta).abs() < epsilon::<f64>() {
             // pre-sort
             let (primary, secondary) = if primary < secondary {
                 (primary, secondary)
@@ -107,12 +105,13 @@ pub(crate) fn test_required(
     let map = transform(key_pair, pair);
 
     for unmapped in pattern {
-        let mapped = plane.intersection_point(map.transform_point(unmapped.into()));
+        let mapped = plane.intersection_point(map.transform_point(unmapped.point()));
         if let Some(mapped) = mapped {
             if !points.contains(&mapped) {
                 return None;
             }
-            let real_diff = unmapped.seq2().unwrap().rotation() - unmapped.seq1().unwrap().rotation();
+            let real_diff =
+                unmapped.seq2().unwrap().rotation() - unmapped.seq1().unwrap().rotation();
             let test_diff = mapped.seq2().unwrap().rotation() - mapped.seq1().unwrap().rotation();
 
             if real_diff != test_diff && real_diff + test_diff != TAU {
@@ -132,7 +131,7 @@ pub(crate) fn map_optional(
     plane: &FiveFold,
     amount: usize,
 ) -> Option<IntersectionPoint> {
-    let mapped = map.transform_point(point.into());
+    let mapped = map.transform_point(point.point());
 
     let sequences = plane
         .sequences()
@@ -151,7 +150,7 @@ pub(crate) fn map_optional(
             bars[0],
             sequences[1].1,
             bars[1],
-            point.into(),
+            point.point(),
         ))
     } else if let Some((index, _)) = sequences.first() {
         let mut temp = IntersectionPoint::incomplete(mapped);
