@@ -49,14 +49,17 @@ fn force_new<T: Constellation + Sized>(plane: &mut FiveFold, constellations: &Ve
 }
 
 pub fn compute_area(plane: &mut FiveFold, bounds: &Box2D<f64>) -> MatchList {
-    let kites;
-    let mut darts;
-    let mut double_kites;
+    let mut darts = Vec::new();
+    let mut double_kites = Vec::new();
+    let mut boundaries = Vec::new();
 
     let (points, boundaries) = loop {
+        darts.clear();
+        double_kites.clear();
+        boundaries.clear();
+
         let points = plane.intersection_points(bounds);
 
-        let mut boundaries = Vec::new();
         let mut layer = -1f64;
         let mut theta = -1f64;
 
@@ -69,15 +72,16 @@ pub fn compute_area(plane: &mut FiveFold, bounds: &Box2D<f64>) -> MatchList {
             }
         }
 
-        darts = Dart::constellations(&points, plane, Some(&boundaries));
-        double_kites = DoubleKite::constellations(&points, plane, Some(&boundaries));
+        Dart::constellations(&points, plane, Some(&boundaries), &mut darts);
+        DoubleKite::constellations(&points, plane, Some(&boundaries), &mut double_kites);
 
         if !(force_new(plane, &darts) || force_new(plane, &double_kites)) {
             break (points, boundaries);
         }
     };
 
-    kites = Kite::constellations(&points, plane, Some(&boundaries));
+    let mut kites = Vec::new();
+    Kite::constellations(&points, plane, Some(&boundaries), &mut kites);
 
     MatchList { kites, darts }
 }

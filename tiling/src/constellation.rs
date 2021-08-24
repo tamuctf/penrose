@@ -182,7 +182,8 @@ pub trait Constellation {
         points: &BTreeSet<IntersectionPoint>,
         plane: &FiveFold,
         boundaries: Option<&[IntersectionPoint]>,
-    ) -> Vec<Self>
+        constellations: &mut Vec<Self>
+    )
     where
         Self: Sized,
     {
@@ -217,8 +218,6 @@ pub trait Constellation {
             pair_scan(points, Self::delta())
         };
 
-        let mut constellations = Vec::new();
-
         for (primary, secondary) in pairs
             .iter()
             .flat_map(|(primary, secondaries)| once(primary).cartesian_product(secondaries.iter()))
@@ -229,8 +228,6 @@ pub trait Constellation {
                 constellations.push(found);
             }
         }
-
-        constellations
     }
 }
 
