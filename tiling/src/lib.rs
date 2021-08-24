@@ -35,6 +35,9 @@ mod intersection_point;
 mod kite;
 mod musical_sequence;
 mod shape;
+mod chunk;
+
+use chunk::CHUNK;
 
 #[derive(Debug)]
 pub struct MatchList {
@@ -52,6 +55,10 @@ pub fn compute_area(plane: &mut FiveFold, bounds: &Box2D<f64>) -> MatchList {
     let kites;
     let mut darts;
     let mut double_kites;
+    
+    CHUNK.with(|chunk| {
+        chunk.borrow_mut().clear();
+    });
 
     let (points, boundaries) = loop {
         let points = plane.intersection_points(bounds);

@@ -26,6 +26,7 @@ use super::musical_sequence::BarNumber;
 use super::musical_sequence::MusicalSequence;
 use std::f64::consts::TAU;
 use std::fmt::{Display, Formatter};
+use super::chunk::{CHUNK, Key};
 
 #[derive(Debug, Default, Clone)]
 pub struct IntersectionPoint {
@@ -37,9 +38,9 @@ pub struct IntersectionPoint {
     pub(crate) bar2: BarNumber,
     pub(crate) box_layer: f64,
     pub(crate) box_theta: f64,
-    dup_right: Option<Box<IntersectionPoint>>,
-    dup_bottom: Option<Box<IntersectionPoint>>,
-    dup_diagonal: Option<Box<IntersectionPoint>>,
+    dup_right: Option<Key>,
+    dup_bottom: Option<Key>,
+    dup_diagonal: Option<Key>,
 }
 
 fn box_info(x_boxes: f64, y_boxes: f64) -> (f64, f64) {
@@ -121,21 +122,21 @@ impl IntersectionPoint {
         let x_overflow = (x_rem * box_dim::<f64>()) + box_overlap::<f64>();
         let y_overflow = (y_rem * box_dim::<f64>()) + box_overlap::<f64>();
 
-        if x_overflow > box_dim::<f64>() && y_overflow > box_dim::<f64>() {
-            let (layer, theta) = box_info(x_floor + 1f64, y_floor + 1f64);
-            res.dup_diagonal
-                .replace(Box::new(Self::new_derived(&res, layer, theta)));
-        }
-        if x_overflow > box_dim::<f64>() {
-            let (layer, theta) = box_info(x_floor + 1f64, y_floor);
-            res.dup_right
-                .replace(Box::new(Self::new_derived(&res, layer, theta)));
-        }
-        if y_overflow > box_dim::<f64>() {
-            let (layer, theta) = box_info(x_floor, y_floor + 1f64);
-            res.dup_bottom
-                .replace(Box::new(Self::new_derived(&res, layer, theta)));
-        }
+        CHUNK.with(|chunk| {
+            let mut chunk = chunk.borrow_mut();
+            if x_overflow > box_dim::<f64>() && y_overflow > box_dim::<f64>() {
+                let (layer, theta) = box_info(x_floor + 1f64, y_floor + 1f64);
+                res.dup_diagonal = chunk.insert(Self::new_derived(&res, layer, theta));
+            }
+            if x_overflow > box_dim::<f64>() {
+                let (layer, theta) = box_info(x_floor + 1f64, y_floor);
+                res.dup_right = chunk.insert(Self::new_derived(&res, layer, theta));
+            }
+            if y_overflow > box_dim::<f64>() {
+                let (layer, theta) = box_info(x_floor, y_floor + 1f64);
+                res.dup_bottom = chunk.insert(Self::new_derived(&res, layer, theta));
+            }
+        });
 
         let (layer, theta) = box_info(x_floor, y_floor);
         res.box_layer = layer;
@@ -145,11 +146,14 @@ impl IntersectionPoint {
     }
 
     pub(crate) fn add_to(&self, store: &mut BTreeSet<Self>) -> bool {
-        std::iter::once(self)
-            .chain(self.dup_right.as_deref())
-            .chain(self.dup_bottom.as_deref())
-            .chain(self.dup_diagonal.as_deref())
-            .all(|point| store.insert(point.clone()))
+        CHUNK.with(|chunk| {
+            let chunk = chunk.borrow();
+            std::iter::once(self)
+                .chain(self.dup_right.map(|key| chunk.resolve(key)))
+                .chain(self.dup_bottom.map(|key| chunk.resolve(key)))
+                .chain(self.dup_diagonal.map(|key| chunk.resolve(key)))
+                .all(|point| store.insert(point.clone()))
+        })
     }
 }
 
