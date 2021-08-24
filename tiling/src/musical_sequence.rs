@@ -190,20 +190,6 @@ impl MusicalSequence {
         }
     }
 
-    pub(crate) fn unforced_bars<I>(&self, r: I) -> Vec<BarNumber>
-    where
-        I: Iterator<Item = BarNumber>,
-    {
-        r.filter(|&i| !self.is_forced(i)).collect_vec()
-    }
-
-    pub(crate) fn forced_bars<I>(&self, r: I) -> Vec<BarNumber>
-    where
-        I: Iterator<Item = BarNumber>,
-    {
-        r.filter(|&i| self.is_forced(i)).collect_vec()
-    }
-
     pub fn get_bar_forcings<I>(&self, r: I) -> Vec<bool>
     where
         I: Iterator<Item = BarNumber>,
