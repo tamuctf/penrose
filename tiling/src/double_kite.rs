@@ -41,7 +41,7 @@ lazy_static! {
         ]
     };
     static ref KEY_PAIR: [IntersectionPoint; 2] = [PATTERN[1].clone(), PATTERN[3].clone(),];
-    static ref DELTA: f64 = Point2D::from(&KEY_PAIR[0]).distance_to((&KEY_PAIR[1]).into());
+    static ref DELTA: f64 = KEY_PAIR[0].point().distance_to(KEY_PAIR[1].point());
     static ref FORCE: IntersectionPoint = {
         let mut plane = FiveFold::deuce_configuration();
         plane.sequences_mut()[2].force(-1, BarBound::Shorter);
@@ -75,7 +75,7 @@ impl Constellation for DoubleKite {
     }
 
     fn test_pair(
-        points: &BTreeSet<IntersectionPoint>,
+        points: &BTreeSet<&IntersectionPoint>,
         plane: &FiveFold,
         pair: [&IntersectionPoint; 2],
     ) -> Option<Self>
@@ -94,8 +94,8 @@ impl Constellation for DoubleKite {
     fn force_bars(&self, plane: &mut FiveFold) -> bool {
         let new = map_optional(&*FORCE, &self.mapping, plane, 1).unwrap();
 
-        if new.seq2.is_none() {
-            return plane.force_point(new.borrow().into(), new.seq1.as_ref().unwrap());
+        if new.seq2().is_none() {
+            return plane.force_point(new.borrow().point(), new.seq1().as_ref().unwrap());
         }
         false
     }

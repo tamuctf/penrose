@@ -29,17 +29,21 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Default, Clone)]
 pub struct IntersectionPoint {
-    pub x: f64,
-    pub y: f64,
+    pub(crate) data: Data,
+    dup_right: Option<Box<IntersectionPoint>>,
+    dup_bottom: Option<Box<IntersectionPoint>>,
+    dup_diagonal: Option<Box<IntersectionPoint>>,
+}
+
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct Data {
+    pub(crate) point: Point2D<f64>,
     pub(crate) seq1: Option<MusicalSequence>,
     pub(crate) bar1: BarNumber,
     pub(crate) seq2: Option<MusicalSequence>,
     pub(crate) bar2: BarNumber,
     pub(crate) box_layer: f64,
     pub(crate) box_theta: f64,
-    dup_right: Option<Box<IntersectionPoint>>,
-    dup_bottom: Option<Box<IntersectionPoint>>,
-    dup_diagonal: Option<Box<IntersectionPoint>>,
 }
 
 fn box_info(x_boxes: f64, y_boxes: f64) -> (f64, f64) {
@@ -52,12 +56,50 @@ fn box_info(x_boxes: f64, y_boxes: f64) -> (f64, f64) {
 }
 
 impl IntersectionPoint {
+    #[inline(always)]
+    pub fn point(&self) -> Point2D<f64> {
+        self.data.point
+    }
+    #[inline(always)]
+    pub fn x(&self) -> f64 {
+        self.data.point.x
+    }
+    #[inline(always)]
+    pub fn y(&self) -> f64 {
+        self.data.point.y
+    }
+    #[inline(always)]
+    pub(crate) fn seq1(&self) -> Option<MusicalSequence> {
+        self.data.seq1
+    }
+    #[inline(always)]
+    pub(crate) fn bar1(&self) -> BarNumber {
+        self.data.bar1
+    }
+    #[inline(always)]
+    pub(crate) fn seq2(&self) -> Option<MusicalSequence> {
+        self.data.seq2
+    }
+    #[inline(always)]
+    pub(crate) fn bar2(&self) -> BarNumber {
+        self.data.bar2
+    }
+    #[inline(always)]
+    pub(crate) fn box_layer(&self) -> f64 {
+        self.data.box_layer
+    }
+    #[inline(always)]
+    pub(crate) fn box_theta(&self) -> f64 {
+        self.data.box_theta
+    }
     pub(crate) fn incomplete(point: Point2D<f64>) -> Self {
         Self {
-            x: point.x,
-            y: point.y,
-            box_layer: -1f64,
-            box_theta: -1f64,
+            data: Data {
+                point,
+                box_layer: -1f64,
+                box_theta: -1f64,
+                ..Default::default()
+            },
             ..Default::default()
         }
     }
@@ -72,16 +114,13 @@ impl IntersectionPoint {
         Self::new(seq1, bar1, seq2, bar2, point.x, point.y)
     }
 
-    fn new_derived(base: &Self, layer: f64, theta: f64) -> Self {
+    fn new_derived(base: Data, layer: f64, theta: f64) -> Self {
         Self {
-            x: base.x,
-            y: base.y,
-            seq1: base.seq1,
-            bar1: base.bar1,
-            seq2: base.seq2,
-            bar2: base.bar2,
-            box_layer: layer,
-            box_theta: theta,
+            data: Data {
+                box_layer: layer,
+                box_theta: theta,
+                ..base
+            },
             ..Default::default()
         }
     }
@@ -100,17 +139,19 @@ impl IntersectionPoint {
             (Some(*seq2), bar2, Some(*seq1), bar1)
         };
         let mut res = Self {
-            x,
-            y,
-            seq1,
-            bar1,
-            seq2,
-            bar2,
+            data: Data {
+                point: Point2D::new(x, y),
+                seq1,
+                bar1,
+                seq2,
+                bar2,
+                ..Default::default()
+            },
             ..Default::default()
         };
 
-        let x_boxes = (res.x - box_origin::<f64>()) / box_dim::<f64>();
-        let y_boxes = (res.y - box_origin::<f64>()) / box_dim::<f64>();
+        let x_boxes = (res.x() - box_origin::<f64>()) / box_dim::<f64>();
+        let y_boxes = (res.y() - box_origin::<f64>()) / box_dim::<f64>();
 
         let x_floor = x_boxes.floor();
         let y_floor = y_boxes.floor();
@@ -124,72 +165,80 @@ impl IntersectionPoint {
         if x_overflow > box_dim::<f64>() && y_overflow > box_dim::<f64>() {
             let (layer, theta) = box_info(x_floor + 1f64, y_floor + 1f64);
             res.dup_diagonal
-                .replace(Box::new(Self::new_derived(&res, layer, theta)));
+                .replace(Box::new(Self::new_derived(res.data, layer, theta)));
         }
         if x_overflow > box_dim::<f64>() {
             let (layer, theta) = box_info(x_floor + 1f64, y_floor);
             res.dup_right
-                .replace(Box::new(Self::new_derived(&res, layer, theta)));
+                .replace(Box::new(Self::new_derived(res.data, layer, theta)));
         }
         if y_overflow > box_dim::<f64>() {
             let (layer, theta) = box_info(x_floor, y_floor + 1f64);
             res.dup_bottom
-                .replace(Box::new(Self::new_derived(&res, layer, theta)));
+                .replace(Box::new(Self::new_derived(res.data, layer, theta)));
         }
 
         let (layer, theta) = box_info(x_floor, y_floor);
-        res.box_layer = layer;
-        res.box_theta = theta;
+        res.data.box_layer = layer;
+        res.data.box_theta = theta;
 
         res
     }
 
-    pub(crate) fn add_to(&self, store: &mut BTreeSet<Self>) -> bool {
+    pub(crate) fn add_to<'a>(&'a self, store: &mut BTreeSet<&'a Self>) -> bool {
         std::iter::once(self)
             .chain(self.dup_right.as_deref())
             .chain(self.dup_bottom.as_deref())
             .chain(self.dup_diagonal.as_deref())
-            .all(|point| store.insert(point.clone()))
-    }
-}
-
-impl From<&IntersectionPoint> for Point2D<f64> {
-    fn from(point: &IntersectionPoint) -> Self {
-        Point2D::new(point.x, point.y)
+            .all(|point| store.insert(point))
     }
 }
 
 impl Eq for IntersectionPoint {}
 
-impl PartialEq<Self> for IntersectionPoint {
+impl PartialEq for IntersectionPoint {
     fn eq(&self, other: &Self) -> bool {
         self.partial_cmp(other).unwrap().is_eq()
     }
 }
 
-impl PartialOrd<Self> for IntersectionPoint {
+trait OrderingExt {
+    fn and_then(self, f: impl Fn() -> Ordering) -> Ordering;
+}
+
+impl OrderingExt for Ordering {
+    fn and_then(self, f: impl Fn() -> Ordering) -> Ordering {
+        if self != Ordering::Equal {
+            self
+        } else {
+            f()
+        }
+    }
+}
+
+impl PartialOrd for IntersectionPoint {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(
-            self.box_layer
-                .partial_cmp(&other.box_layer)
+            self.box_layer()
+                .partial_cmp(&other.box_layer())
                 .unwrap()
-                .then(self.box_theta.partial_cmp(&other.box_theta).unwrap())
-                .then(
-                    self.seq1
+                .and_then(|| self.box_theta().partial_cmp(&other.box_theta()).unwrap())
+                .and_then(|| {
+                    self.seq1()
                         .unwrap()
                         .rotation()
-                        .partial_cmp(&other.seq1.unwrap().rotation())
-                        .unwrap(),
-                )
-                .then(
-                    self.seq2
+                        .partial_cmp(&other.seq1().unwrap().rotation())
+                        .unwrap()
+                })
+                .and_then(|| {
+                    self.seq2()
                         .unwrap()
                         .rotation()
-                        .partial_cmp(&other.seq2.unwrap().rotation())
-                        .unwrap(),
-                )
-                .then(self.bar1.cmp(&other.bar1))
-                .then(self.bar2.cmp(&other.bar2)),
+                        .partial_cmp(&other.seq2().unwrap().rotation())
+                        .unwrap()
+                })
+                .and_then(|| self.bar1().cmp(&other.bar1()))
+                .and_then(|| self.bar2().cmp(&other.bar2())),
         )
     }
 }
@@ -202,7 +251,7 @@ impl Ord for IntersectionPoint {
 
 impl Display for IntersectionPoint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&*format!("({}, {})", self.x, self.y))
+        write!(f, "({}, {})", self.x(), self.y())
     }
 }
 
@@ -211,6 +260,7 @@ mod test {
     use crate::musical_sequence::BarBound;
 
     use super::*;
+    use rustc_hash::FxHashMap;
 
     #[test]
     #[ignore]
@@ -223,9 +273,19 @@ mod test {
         primary.force(10, BarBound::Longer);
         secondary.force(10, BarBound::Shorter);
 
+        let mut cache = FxHashMap::default();
+
         for i in (0..100).step_by(10) {
             for j in (0..100).step_by(10) {
-                let point = IntersectionPoint::new(&primary, i, &secondary, j, i as f64, j as f64);
+                cache.insert(
+                    (i, j),
+                    IntersectionPoint::new(&primary, i, &secondary, j, i as f64, j as f64),
+                );
+            }
+        }
+        for i in (0..100).step_by(10) {
+            for j in (0..100).step_by(10) {
+                let point = cache.get(&(i, j)).unwrap();
 
                 (!point.add_to(&mut points)).then(|| panic!("couldn't add all points"));
             }
@@ -234,8 +294,8 @@ mod test {
         for point in points {
             println!(
                 "point box layer: {}  theta: {}",
-                point.box_layer,
-                point.box_theta.to_degrees()
+                point.box_layer(),
+                point.box_theta().to_degrees()
             );
         }
     }

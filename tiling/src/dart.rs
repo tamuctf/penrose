@@ -42,7 +42,7 @@ lazy_static! {
         ]
     };
     static ref KEY_PAIR: [IntersectionPoint; 2] = [PATTERN[0].clone(), PATTERN[2].clone(),];
-    static ref DELTA: f64 = Point2D::from(&KEY_PAIR[0]).distance_to((&KEY_PAIR[1]).into());
+    static ref DELTA: f64 = KEY_PAIR[0].point().distance_to(KEY_PAIR[1].point());
     static ref OPTIONAL_LEFT: IntersectionPoint = {
         let plane = FiveFold::ace_configuration();
         intersection_point(&plane.sequences()[0], 0, &plane.sequences()[4], 0)
@@ -109,7 +109,7 @@ impl Constellation for Dart {
     }
 
     fn test_pair(
-        points: &BTreeSet<IntersectionPoint>,
+        points: &BTreeSet<&IntersectionPoint>,
         plane: &FiveFold,
         pair: [&IntersectionPoint; 2],
     ) -> Option<Self>
@@ -131,15 +131,15 @@ impl Constellation for Dart {
     }
 
     fn force_bars(&self, plane: &mut FiveFold) -> bool {
-        if self.left.as_ref().unwrap().seq2.is_none() {
+        if self.left.as_ref().unwrap().seq2().is_none() {
             plane.force_point(
-                self.left.as_ref().unwrap().into(),
-                self.left.as_ref().unwrap().seq1.as_ref().unwrap(),
+                self.left.as_ref().unwrap().point(),
+                self.left.as_ref().unwrap().seq1().as_ref().unwrap(),
             )
-        } else if self.right.as_ref().unwrap().seq2.is_none() {
+        } else if self.right.as_ref().unwrap().seq2().is_none() {
             plane.force_point(
-                self.right.as_ref().unwrap().into(),
-                self.right.as_ref().unwrap().seq1.as_ref().unwrap(),
+                self.right.as_ref().unwrap().point(),
+                self.right.as_ref().unwrap().seq1().as_ref().unwrap(),
             )
         } else {
             false

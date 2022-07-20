@@ -31,18 +31,18 @@ use super::constants::epsilon;
 use super::fivefold::FiveFold;
 use super::intersection_point::IntersectionPoint;
 
-pub(crate) type PointGraph = BTreeMap<IntersectionPoint, BTreeSet<IntersectionPoint>>;
+pub(crate) type PointGraph<'a> = BTreeMap<&'a IntersectionPoint, BTreeSet<&'a IntersectionPoint>>;
 
 trait Consume {
     fn consume(&mut self, other: Self);
 }
 
-impl Consume for PointGraph {
+impl<'a> Consume for PointGraph<'a> {
     fn consume(&mut self, other: Self) {
         for (primary, mut secondaries) in other.into_iter() {
             match self.get_mut(&primary) {
                 None => {
-                    self.insert(primary.clone(), secondaries);
+                    self.insert(primary, secondaries);
                 }
                 Some(existing) => {
                     existing.append(&mut secondaries);
@@ -52,13 +52,14 @@ impl Consume for PointGraph {
     }
 }
 
-fn pair_scan(points: &BTreeSet<IntersectionPoint>, delta: f64) -> PointGraph {
-    let mut pairs = BTreeMap::new();
+fn pair_scan<'a>(
+    points: impl Iterator<Item = &'a IntersectionPoint> + Clone,
+    delta: f64,
+) -> PointGraph<'a> {
+    let mut pairs = PointGraph::<'a>::new();
 
-    for (primary, secondary) in points.iter().tuple_combinations() {
-        if (Point2D::from(primary).distance_to(Point2D::from(secondary)) - delta).abs()
-            < epsilon::<f64>()
-        {
+    for (primary, secondary) in points.tuple_combinations() {
+        if (primary.point().distance_to(secondary.point()) - delta).abs() < epsilon::<f64>() {
             // pre-sort
             let (primary, secondary) = if primary < secondary {
                 (primary, secondary)
@@ -68,11 +69,11 @@ fn pair_scan(points: &BTreeSet<IntersectionPoint>, delta: f64) -> PointGraph {
             match pairs.get_mut(primary) {
                 None => {
                     let mut set = BTreeSet::new();
-                    set.insert(secondary.clone());
-                    pairs.insert(primary.clone(), set);
+                    set.insert(secondary);
+                    pairs.insert(primary, set);
                 }
                 Some(set) => {
-                    set.insert(secondary.clone());
+                    set.insert(secondary);
                 }
             }
         }
@@ -82,23 +83,23 @@ fn pair_scan(points: &BTreeSet<IntersectionPoint>, delta: f64) -> PointGraph {
 }
 
 fn transform(real: &[IntersectionPoint; 2], test: [&IntersectionPoint; 2]) -> Transform2D<f64> {
-    let real_theta = (real[1].y - real[0].y)
-        .atan2(real[1].x - real[0].x)
+    let real_theta = (real[1].y() - real[0].y())
+        .atan2(real[1].x() - real[0].x())
         .rem_euclid(TAU);
-    let test_theta = (test[1].y - test[0].y)
-        .atan2(test[1].x - test[0].x)
+    let test_theta = (test[1].y() - test[0].y())
+        .atan2(test[1].x() - test[0].x())
         .rem_euclid(TAU);
 
     let theta = test_theta - real_theta;
 
     Transform2D::identity()
-        .pre_translate(Vector2D::new(test[0].x, test[0].y))
+        .pre_translate(Vector2D::new(test[0].x(), test[0].y()))
         .pre_rotate(Angle::radians(theta))
-        .pre_translate(Vector2D::new(-real[0].x, -real[0].y))
+        .pre_translate(Vector2D::new(-real[0].x(), -real[0].y()))
 }
 
 pub(crate) fn test_required(
-    points: &BTreeSet<IntersectionPoint>,
+    points: &BTreeSet<&IntersectionPoint>,
     plane: &FiveFold,
     pair: [&IntersectionPoint; 2],
     key_pair: &[IntersectionPoint; 2],
@@ -107,13 +108,14 @@ pub(crate) fn test_required(
     let map = transform(key_pair, pair);
 
     for unmapped in pattern {
-        let mapped = plane.intersection_point(map.transform_point(unmapped.into()));
+        let mapped = plane.intersection_point(map.transform_point(unmapped.point()));
         if let Some(mapped) = mapped {
             if !points.contains(&mapped) {
                 return None;
             }
-            let real_diff = unmapped.seq2.unwrap().rotation() - unmapped.seq1.unwrap().rotation();
-            let test_diff = mapped.seq2.unwrap().rotation() - mapped.seq1.unwrap().rotation();
+            let real_diff =
+                unmapped.seq2().unwrap().rotation() - unmapped.seq1().unwrap().rotation();
+            let test_diff = mapped.seq2().unwrap().rotation() - mapped.seq1().unwrap().rotation();
 
             if real_diff != test_diff && real_diff + test_diff != TAU {
                 return None;
@@ -132,7 +134,7 @@ pub(crate) fn map_optional(
     plane: &FiveFold,
     amount: usize,
 ) -> Option<IntersectionPoint> {
-    let mapped = map.transform_point(point.into());
+    let mapped = map.transform_point(point.point());
 
     let sequences = plane
         .sequences()
@@ -151,11 +153,11 @@ pub(crate) fn map_optional(
             bars[0],
             sequences[1].1,
             bars[1],
-            point.into(),
+            point.point(),
         ))
     } else if let Some((index, _)) = sequences.first() {
         let mut temp = IntersectionPoint::incomplete(mapped);
-        temp.seq1 = Some(plane.sequences()[(index + amount) % 5].clone());
+        temp.data.seq1 = Some(plane.sequences()[(index + amount) % 5].clone());
         Some(temp)
     } else {
         None
@@ -167,7 +169,7 @@ pub trait Constellation {
     fn key_pair() -> &'static [IntersectionPoint; 2];
     fn pattern() -> &'static [IntersectionPoint];
     fn test_pair(
-        points: &BTreeSet<IntersectionPoint>,
+        points: &BTreeSet<&IntersectionPoint>,
         plane: &FiveFold,
         pair: [&IntersectionPoint; 2],
     ) -> Option<Self>
@@ -179,9 +181,9 @@ pub trait Constellation {
     fn force_bars(&self, plane: &mut FiveFold) -> bool;
 
     fn constellations(
-        points: &BTreeSet<IntersectionPoint>,
+        points: &BTreeSet<&IntersectionPoint>,
         plane: &FiveFold,
-        boundaries: Option<&[IntersectionPoint]>,
+        boundaries: Option<&[&IntersectionPoint]>,
     ) -> Vec<Self>
     where
         Self: Sized,
@@ -191,30 +193,32 @@ pub trait Constellation {
             let mut pairs = PointGraph::new();
 
             for (old, current) in boundaries.iter().tuple_windows() {
-                let slice: BTreeSet<IntersectionPoint> = points
-                    .iter()
-                    .skip_while(|&p| p < old)
-                    .take_while(|&p| p <= current)
-                    .cloned()
-                    .collect();
-                pairs.consume(pair_scan(&slice, Self::delta()));
+                pairs.consume(pair_scan(
+                    points
+                        .iter()
+                        .copied()
+                        .skip_while(|&p| p < old)
+                        .take_while(|&p| p <= current),
+                    Self::delta(),
+                ));
 
                 // println!("{}", pairs.len());
                 // println!("{}", pairs.values().map(|item| item.len()).sum::<usize>());
             }
 
             let last = boundaries.last().unwrap();
-            let slice: BTreeSet<IntersectionPoint> =
-                points.iter().skip_while(|&p| p < last).cloned().collect();
             // println!("{} => {}", points.len(), slice.len());
-            pairs.consume(pair_scan(&slice, Self::delta()));
+            pairs.consume(pair_scan(
+                points.iter().copied().skip_while(|&p| p < last),
+                Self::delta(),
+            ));
 
             // println!("{}", pairs.len());
             // println!("{}", pairs.values().map(|item| item.len()).sum::<usize>());
 
             pairs
         } else {
-            pair_scan(points, Self::delta())
+            pair_scan(points.iter().copied(), Self::delta())
         };
 
         let mut constellations = Vec::new();
