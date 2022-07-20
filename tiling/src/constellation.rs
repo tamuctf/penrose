@@ -183,9 +183,8 @@ pub trait Constellation {
         points: &BTreeSet<&IntersectionPoint>,
         plane: &FiveFold,
         boundaries: Option<&[&IntersectionPoint]>,
-        constellations: &mut Vec<Self>
-    )
-    where
+        constellations: &mut Vec<Self>,
+    ) where
         Self: Sized,
     {
         let pairs = if let Some(boundaries) = boundaries.filter(|boundaries| boundaries.len() >= 2)

@@ -128,7 +128,11 @@ fn bar_to_point(ms: &MusicalSequence, bar: BarNumber) -> Point2D<f64> {
     distance_to_point(ms, ms.get_bar_distance(bar))
 }
 
-fn bars<'a>(area: &Box2D<f64>, ms: &'a MusicalSequence, forced: bool) -> impl Iterator<Item = BarNumber> + Clone + 'a {
+fn bars<'a>(
+    area: &Box2D<f64>,
+    ms: &'a MusicalSequence,
+    forced: bool,
+) -> impl Iterator<Item = BarNumber> + Clone + 'a {
     let (first, last) = [area.min.x, area.max.x]
         .iter()
         .copied()
@@ -151,7 +155,10 @@ fn bars<'a>(area: &Box2D<f64>, ms: &'a MusicalSequence, forced: bool) -> impl It
     })
 }
 
-fn forced_bars<'a>(area: &Box2D<f64>, ms: &'a MusicalSequence) -> impl Iterator<Item = BarNumber> + Clone + 'a {
+fn forced_bars<'a>(
+    area: &Box2D<f64>,
+    ms: &'a MusicalSequence,
+) -> impl Iterator<Item = BarNumber> + Clone + 'a {
     bars(area, ms, true)
 }
 
@@ -436,10 +443,7 @@ mod test {
             });
 
         let expected_intersections = vec![Point2D::new(0f64, 0f64); 10];
-        let bounds = Box2D::new(
-            Point2D::new(-1.2, -1.2),
-            Point2D::new(1.2, 1.2),
-        );
+        let bounds = Box2D::new(Point2D::new(-1.2, -1.2), Point2D::new(1.2, 1.2));
         fold.update_intersection_points(&bounds);
         let actual_intersections = fold.intersection_points(&bounds);
 

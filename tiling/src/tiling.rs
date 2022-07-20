@@ -76,7 +76,12 @@ impl Tiling {
                 }
 
                 Dart::constellations(&points, &self.plane, Some(&boundaries), &mut darts);
-                DoubleKite::constellations(&points, &self.plane, Some(&boundaries), &mut double_kites);
+                DoubleKite::constellations(
+                    &points,
+                    &self.plane,
+                    Some(&boundaries),
+                    &mut double_kites,
+                );
                 Kite::constellations(&points, &self.plane, Some(&boundaries), &mut kites);
             }
 
