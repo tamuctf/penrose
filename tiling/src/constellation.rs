@@ -18,7 +18,6 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::f64::consts::TAU;
-use std::iter::once;
 
 use arrayvec::ArrayVec;
 use euclid::default::{Transform2D, Vector2D};
