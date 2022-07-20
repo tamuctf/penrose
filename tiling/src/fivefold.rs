@@ -433,10 +433,12 @@ mod test {
             });
 
         let expected_intersections = vec![Point2D::new(0f64, 0f64); 10];
-        let actual_intersections = fold.intersection_points(&Box2D::new(
+        let bounds = Box2D::new(
             Point2D::new(-1.2, -1.2),
             Point2D::new(1.2, 1.2),
-        ));
+        );
+        fold.update_intersection_points(&bounds);
+        let actual_intersections = fold.intersection_points(&bounds);
 
         assert_eq!(expected_intersections.len(), actual_intersections.len());
         expected_intersections
