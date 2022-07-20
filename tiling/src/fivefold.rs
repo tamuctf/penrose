@@ -128,7 +128,7 @@ fn bar_to_point(ms: &MusicalSequence, bar: BarNumber) -> Point2D<f64> {
     distance_to_point(ms, ms.get_bar_distance(bar))
 }
 
-fn bars(area: &Box2D<f64>, ms: &MusicalSequence, forced: bool) -> Vec<BarNumber> {
+fn bars<'a>(area: &Box2D<f64>, ms: &'a MusicalSequence, forced: bool) -> impl Iterator<Item = BarNumber> + Clone + 'a {
     let (first, last) = [area.min.x, area.max.x]
         .iter()
         .copied()
@@ -141,14 +141,17 @@ fn bars(area: &Box2D<f64>, ms: &MusicalSequence, forced: bool) -> Vec<BarNumber>
 
     let bars = ms.get_bar(first)..=ms.get_bar(last);
 
-    if forced {
-        ms.forced_bars(bars)
-    } else {
-        ms.unforced_bars(bars)
-    }
+    bars.filter(move |&i| {
+        // we pray to the branch prediction and inlining gods here
+        if forced {
+            ms.is_forced(i)
+        } else {
+            !ms.is_forced(i)
+        }
+    })
 }
 
-fn forced_bars(area: &Box2D<f64>, ms: &MusicalSequence) -> Vec<BarNumber> {
+fn forced_bars<'a>(area: &Box2D<f64>, ms: &'a MusicalSequence) -> impl Iterator<Item = BarNumber> + Clone + 'a {
     bars(area, ms, true)
 }
 

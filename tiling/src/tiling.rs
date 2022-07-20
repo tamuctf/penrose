@@ -47,11 +47,15 @@ impl Tiling {
     }
 
     pub fn compute_area(&mut self) -> MatchList {
-        let mut kites;
-        let mut darts;
-        let mut double_kites;
+        let mut darts = Vec::new();
+        let mut double_kites = Vec::new();
+        let mut kites = Vec::new();
 
         loop {
+            darts.clear();
+            double_kites.clear();
+            kites.clear();
+
             self.plane.update_intersection_points(&self.bounds);
             {
                 let points = self.plane.intersection_points(&self.bounds);
@@ -71,9 +75,9 @@ impl Tiling {
                     }
                 }
 
-                darts = Dart::constellations(&points, &self.plane, Some(&boundaries));
-                double_kites = DoubleKite::constellations(&points, &self.plane, Some(&boundaries));
-                kites = Kite::constellations(&points, &self.plane, Some(&boundaries));
+                Dart::constellations(&points, &self.plane, Some(&boundaries), &mut darts);
+                DoubleKite::constellations(&points, &self.plane, Some(&boundaries), &mut double_kites);
+                Kite::constellations(&points, &self.plane, Some(&boundaries), &mut kites);
             }
 
             if !(force_new(&mut self.plane, &darts) || force_new(&mut self.plane, &double_kites)) {
