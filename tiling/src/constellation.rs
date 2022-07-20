@@ -225,7 +225,7 @@ pub trait Constellation {
 
         for (primary, secondary) in pairs
             .iter()
-            .flat_map(|(primary, secondaries)| once(primary).cartesian_product(secondaries.iter()))
+            .flat_map(|(primary, secondaries)| secondaries.iter().map(move |s| (primary, s)))
         {
             if let Some(found) = Self::test_pair(points, plane, [primary, secondary]) {
                 constellations.push(found);
