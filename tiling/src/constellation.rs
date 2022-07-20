@@ -21,7 +21,7 @@ use std::f64::consts::TAU;
 use std::iter::once;
 
 use arrayvec::ArrayVec;
-use euclid::default::{Point2D, Transform2D, Vector2D};
+use euclid::default::{Transform2D, Vector2D};
 use euclid::Angle;
 use itertools::Itertools;
 
@@ -117,7 +117,7 @@ pub(crate) fn test_required(
                 unmapped.seq2().unwrap().rotation() - unmapped.seq1().unwrap().rotation();
             let test_diff = mapped.seq2().unwrap().rotation() - mapped.seq1().unwrap().rotation();
 
-            if real_diff != test_diff && real_diff + test_diff != TAU {
+            if (real_diff - test_diff).abs() > epsilon::<f64>() && real_diff + test_diff != TAU {
                 return None;
             }
         } else {
@@ -140,12 +140,12 @@ pub(crate) fn map_optional(
         .sequences()
         .iter()
         .enumerate()
-        .filter(|(_, ms)| plane.is_forced(mapped.into(), ms))
+        .filter(|(_, ms)| plane.is_forced(mapped, ms))
         .collect::<ArrayVec<_, 2>>();
     if sequences.is_full() {
         let bars = sequences
             .iter()
-            .map(|(_, ms)| bar_num(mapped.into(), ms))
+            .map(|(_, ms)| bar_num(mapped, ms))
             .collect::<ArrayVec<_, 2>>();
 
         Some(IntersectionPoint::new_with_point(
@@ -157,7 +157,7 @@ pub(crate) fn map_optional(
         ))
     } else if let Some((index, _)) = sequences.first() {
         let mut temp = IntersectionPoint::incomplete(mapped);
-        temp.data.seq1 = Some(plane.sequences()[(index + amount) % 5].clone());
+        temp.data.seq1 = Some(plane.sequences()[(index + amount) % 5]);
         Some(temp)
     } else {
         None

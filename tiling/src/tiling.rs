@@ -16,15 +16,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::constants::*;
 use super::constellation::Constellation;
 use super::dart::Dart;
 use super::double_kite::DoubleKite;
 use super::fivefold::FiveFold;
-use super::intersection_point::IntersectionPoint;
 use super::kite::Kite;
+use crate::constants::epsilon;
 use euclid::default::Box2D;
-use rustc_hash::FxHashMap;
 
 #[derive(Debug)]
 pub struct MatchList {
@@ -32,7 +30,7 @@ pub struct MatchList {
     pub darts: Vec<Dart>,
 }
 
-fn force_new<T: Constellation + Sized>(plane: &mut FiveFold, constellations: &Vec<T>) -> bool {
+fn force_new<T: Constellation + Sized>(plane: &mut FiveFold, constellations: &[T]) -> bool {
     constellations
         .iter()
         .any(|constellation| constellation.force_bars(plane))
@@ -63,11 +61,13 @@ impl Tiling {
                 let mut theta = -1f64;
 
                 for point in points.iter() {
-                    if point.box_layer() != layer || point.box_theta() != theta {
+                    if (point.box_layer() - layer).abs() > epsilon::<f64>()
+                        || (point.box_theta() - theta).abs() > epsilon::<f64>()
+                    {
                         layer = point.box_layer();
                         theta = point.box_theta();
 
-                        boundaries.push(point.clone());
+                        boundaries.push(*point);
                     }
                 }
 

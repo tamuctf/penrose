@@ -18,7 +18,6 @@
 
 use std::collections::BTreeSet;
 
-use euclid::default::Point2D;
 use euclid::default::Transform2D;
 use lazy_static::lazy_static;
 
@@ -84,7 +83,7 @@ impl Constellation for DoubleKite {
     {
         let mapping = test_required(points, plane, pair, Self::key_pair(), Self::pattern());
 
-        mapping.map(|mapping| DoubleKite::new(mapping))
+        mapping.map(DoubleKite::new)
     }
 
     fn mapping(&self) -> Transform2D<f64> {

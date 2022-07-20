@@ -16,10 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use euclid::default::Box2D;
-
-use crate::intersection_point::IntersectionPoint;
-use constants::*;
 pub use constellation::Constellation;
 pub use dart::Dart;
 pub use double_kite::DoubleKite;
