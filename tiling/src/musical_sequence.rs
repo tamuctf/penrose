@@ -32,7 +32,7 @@ pub enum BarBound {
     Shorter,
 }
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct MusicalSequence {
     upper_x: BarNumber,
     upper_y: BarNumber,
@@ -49,7 +49,7 @@ fn truncate_open(value: f64) -> BarNumber {
 
 fn truncate_closed(value: f64) -> BarNumber {
     let temp = value.floor() as BarNumber;
-    if temp as f64 == value {
+    if (temp as f64 - value).abs() < epsilon::<f64>() {
         temp - 1
     } else {
         temp
@@ -61,13 +61,6 @@ fn ddist(shorts: BarNumber, longs: BarNumber, distance: f64) -> f64 {
 }
 
 impl MusicalSequence {
-    fn new() -> Self {
-        MusicalSequence {
-            upper_y: 1,
-            ..Default::default()
-        }
-    }
-
     pub(crate) fn new_with_coords(x: f64, y: f64, r: f64) -> Self {
         MusicalSequence {
             upper_y: 1,
@@ -97,8 +90,7 @@ impl MusicalSequence {
         } else {
             self.find_lower_intercept()
         };
-        let res = x as f64 * golden_ratio::<f64>() + intercept;
-        res
+        x as f64 * golden_ratio::<f64>() + intercept
     }
 
     fn find_upper_point(&self, bar: BarNumber) -> BarNumber {
@@ -241,6 +233,20 @@ impl MusicalSequence {
     }
 }
 
+impl Default for MusicalSequence {
+    fn default() -> Self {
+        Self {
+            upper_x: 0,
+            upper_y: 1,
+            lower_x: 0,
+            lower_y: 0,
+            center_x: 0.0,
+            center_y: 0.0,
+            rotation: 0.0,
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -278,7 +284,7 @@ mod test {
 
     #[test]
     fn force_at_distance_short() {
-        let mut ammann = MusicalSequence::new();
+        let mut ammann = MusicalSequence::default();
 
         ammann.force_at_distance(short::<f64>());
         test_force(
@@ -295,7 +301,7 @@ mod test {
 
     #[test]
     fn force_shorter() {
-        let mut ammann = MusicalSequence::new();
+        let mut ammann = MusicalSequence::default();
 
         ammann.force(1, BarBound::Shorter);
         test_force(
@@ -312,7 +318,7 @@ mod test {
 
     #[test]
     fn force_at_distance_long() {
-        let mut ammann = MusicalSequence::new();
+        let mut ammann = MusicalSequence::default();
 
         ammann.force_at_distance(long::<f64>());
         test_force(
@@ -329,7 +335,7 @@ mod test {
 
     #[test]
     fn force_longer() {
-        let mut ammann = MusicalSequence::new();
+        let mut ammann = MusicalSequence::default();
 
         ammann.force(1, BarBound::Longer);
         test_force(
@@ -346,7 +352,7 @@ mod test {
 
     #[test]
     fn force_at_distance_negative_short() {
-        let mut ammann = MusicalSequence::new();
+        let mut ammann = MusicalSequence::default();
 
         ammann.force_at_distance(-short::<f64>());
         test_force(
@@ -363,7 +369,7 @@ mod test {
 
     #[test]
     fn force_negative_shorter() {
-        let mut ammann = MusicalSequence::new();
+        let mut ammann = MusicalSequence::default();
 
         ammann.force(-1, BarBound::Shorter);
         test_force(
@@ -380,7 +386,7 @@ mod test {
 
     #[test]
     fn force_at_distance_negative_long() {
-        let mut ammann = MusicalSequence::new();
+        let mut ammann = MusicalSequence::default();
 
         ammann.force_at_distance(-long::<f64>());
         test_force(
@@ -397,7 +403,7 @@ mod test {
 
     #[test]
     fn force_negative_longer() {
-        let mut ammann = MusicalSequence::new();
+        let mut ammann = MusicalSequence::default();
 
         ammann.force(-1, BarBound::Longer);
         test_force(
